@@ -13,7 +13,14 @@ const creactUser = asyncHandler(async(req,res,next)=>{
     const findUser = await User.findOne({email:email})
     if(!findUser){
         const newUser = await User.create(req.body)
-        res.json(newUser)
+        res.json({
+          _id:newUser?._id,
+          firstname:newUser?.fastname,
+          lastname:newUser?.lastname,
+          email:newUser?.email,
+          mobile:newUser?.mobile,
+          token:generateToken(newUser?._id)
+      })
     }else{
         throw new Error("User Already Exists");
     }
@@ -168,21 +175,36 @@ const deleteUser = asyncHandler(async (req,res,next)=>{
 
 
 const updateUser = asyncHandler(async (req,res,next)=>{
-    const {id} = req.params
+  const {_id} = req.user;
 
     try {
+
+      const userGet = await User.findById(_id)
+
+      if(req.file){
+        if(userGet.image){
+          const filePath = `uploads/${userGet.image}`;
+          fs.unlink(filePath, (err) => {
+            if (err) {
+              console.error(err);
+            }
+          })
+        }
+
+  
+      }
+
         const getUser = await User.findByIdAndUpdate(id,{
             fastname:req.body.fastname,
             lastname:req.body.lastname,
-            mobile:req.body.mobile
+            mobile:req.body.mobile,
+            city:rewreq.body.city,
+            image: req.file.filename
         },
         {
             new:true
         })
-        res.json({
-            message:"user update sussesfully",
-            
-        })
+        res.json(getUser)
     } catch (error) {
         throw new Error(error)
     }
