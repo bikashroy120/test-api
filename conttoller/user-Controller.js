@@ -14,12 +14,14 @@ const creactUser = asyncHandler(async(req,res,next)=>{
     if(!findUser){
         const newUser = await User.create(req.body)
         res.json({
-          _id:newUser?._id,
-          firstname:newUser?.fastname,
-          lastname:newUser?.lastname,
-          email:newUser?.email,
-          mobile:newUser?.mobile,
-          token:generateToken(newUser?._id)
+            _id:newUser?._id,
+            firstname:newUser?.fastname,
+            lastname:newUser?.lastname,
+            email:newUser?.email,
+            mobile:newUser?.mobile,
+            image:newUser?.image,
+            city:newUser?.city,
+            token:generateToken(newUser?._id),
       })
     }else{
         throw new Error("User Already Exists");
@@ -50,7 +52,10 @@ const loginUserctrl = asyncHandler(async(req,res,next)=>{
             lastname:findUser?.lastname,
             email:findUser?.email,
             mobile:findUser?.mobile,
-            token:generateToken(findUser?._id)
+            image:findUser?.image,
+            city:findUser?.city,
+            token:generateToken(findUser?._id),
+            
         })
     }else{
         throw new Error("Invalid Credentials")
@@ -77,10 +82,12 @@ const loginAdmin = asyncHandler(async (req, res) => {
       });
       res.json({
         _id: findAdmin?._id,
-        firstname: findAdmin?.firstname,
+        firstname: findAdmin?.fastname,
         lastname: findAdmin?.lastname,
         email: findAdmin?.email,
         mobile: findAdmin?.mobile,
+        image:findAdmin?.image,
+        city:findAdmin?.city,
         token: generateToken(findAdmin?._id),
       });
     } else {
@@ -132,7 +139,10 @@ const handleRefreshToken = asyncHandler(async (req, res) => {
 const getallUser = asyncHandler(async (req,res)=>{
     try {
         const getUsers = await User.find();
-        res.json(getUsers)
+
+        const update = getUsers.filter((item)=>item.role !=="admin")
+
+        res.json(update)
     } catch (error) {
         throw new Error(error)
     }
@@ -150,10 +160,10 @@ const getWishList = asyncHandler(async(req,res,next)=>{
 })
 
 const getOneUser = asyncHandler(async (req,res,next)=>{
-    const {id} = req.params
+  const {_id} = req.user;
 
     try {
-        const getUser = await User.findById(id)
+        const getUser = await User.findById(_id)
         res.json(getUser)
     } catch (error) {
         throw new Error(error)
@@ -194,17 +204,26 @@ const updateUser = asyncHandler(async (req,res,next)=>{
   
       }
 
-        const getUser = await User.findByIdAndUpdate(id,{
+        const getUser = await User.findByIdAndUpdate(_id,{
             fastname:req.body.fastname,
             lastname:req.body.lastname,
             mobile:req.body.mobile,
-            city:rewreq.body.city,
+            city:req.body.city,
             image: req.file.filename
         },
         {
             new:true
         })
-        res.json(getUser)
+        res.json({
+        _id: getUser?._id,
+        firstname: getUser?.firstname,
+        lastname: getUser?.lastname,
+        email: getUser?.email,
+        mobile: getUser?.mobile,
+        image:getUser?.image,
+        city:getUser?.city,
+        token: generateToken(getUser?._id),
+        })
     } catch (error) {
         throw new Error(error)
     }
@@ -451,11 +470,8 @@ const userCart = asyncHandler(async (req, res) => {
   
   const getAllOrders = asyncHandler(async (req, res) => {
     try {
-      const alluserorders = await Order.find()
-        .populate("products.product")
-        .populate("orderby")
-        .exec();
-      res.json(alluserorders);
+      const order =await Order.find()
+      res.json(order);
     } catch (error) {
       throw new Error(error);
     }
@@ -493,4 +509,4 @@ const userCart = asyncHandler(async (req, res) => {
 
 
 
-module.exports = {getUserCart,userCart,getallUserOrder,getSingalOrder,creactorder,getWishList,loginAdmin,logout,handleRefreshToken,creactUser,blockUser,unblockUser,loginUserctrl,getallUser,getOneUser,deleteUser,updateUser}
+module.exports = {getUserCart,userCart,getallUserOrder,getAllOrders,getSingalOrder,creactorder,getWishList,loginAdmin,logout,handleRefreshToken,creactUser,blockUser,unblockUser,loginUserctrl,getallUser,getOneUser,deleteUser,updateUser}

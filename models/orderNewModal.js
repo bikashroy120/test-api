@@ -60,5 +60,13 @@ var orderSchema = new mongoose.Schema(
   }
 );
 
+orderSchema.pre(/^find/, function(next) {
+  this.populate({
+    path: 'orderby',
+  })
+
+  next();
+});
+
 //Export the model
 module.exports = mongoose.model("Order", orderSchema);
