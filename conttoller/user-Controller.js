@@ -411,6 +411,27 @@ const userCart = asyncHandler(async (req, res) => {
 
   })
 
+  const geDashbordData = asyncHandler(async(req,res)=>{
+
+    try {
+        const order =await Order.find()
+        const paddingOrder = order.filter(item=>item.orderStatus === "Pending")
+        const Processing = order.filter(item=>item.orderStatus === "Processing")
+        const Complete = order.filter(item=>item.orderStatus === "Complete")
+        res.json({
+          totalOrder:order.length,
+          paddingOrder:paddingOrder.length,
+          ProcessingOrder:Processing.length,
+          CompleteOrder:Complete.length,
+          order:order
+        })
+
+    } catch (error) {
+      throw new Error(error)
+    }
+
+  })
+
   
   // const createOrder = asyncHandler(async (req, res) => {
   //   const { COD, couponApplied } = req.body;
@@ -492,7 +513,7 @@ const userCart = asyncHandler(async (req, res) => {
   const updateOrderStatus = asyncHandler(async (req, res) => {
     const { status } = req.body;
     const { id } = req.params;
-    validateMongoDbId(id);
+    console.log(status,id)
     try {
       const updateOrderStatus = await Order.findByIdAndUpdate(
         id,
@@ -509,4 +530,4 @@ const userCart = asyncHandler(async (req, res) => {
 
 
 
-module.exports = {getUserCart,userCart,getallUserOrder,getAllOrders,getSingalOrder,creactorder,getWishList,loginAdmin,logout,handleRefreshToken,creactUser,blockUser,unblockUser,loginUserctrl,getallUser,getOneUser,deleteUser,updateUser}
+module.exports = {getUserCart,userCart,getallUserOrder,updateOrderStatus,geDashbordData,getAllOrders,getSingalOrder,creactorder,getWishList,loginAdmin,logout,handleRefreshToken,creactUser,blockUser,unblockUser,loginUserctrl,getallUser,getOneUser,deleteUser,updateUser}

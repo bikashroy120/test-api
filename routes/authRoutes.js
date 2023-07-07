@@ -1,5 +1,5 @@
 const express = require("express");
-const { creactUser, loginUserctrl, getallUser, getOneUser, deleteUser, updateUser, loginAdmin, getWishList, userCart, getUserCart, creactorder, getSingalOrder, getallUserOrder, getAllOrders } = require("../conttoller/user-Controller");
+const { creactUser, loginUserctrl, getallUser, getOneUser, deleteUser, updateUser, loginAdmin, getWishList, userCart, getUserCart, creactorder, getSingalOrder, getallUserOrder, getAllOrders, geDashbordData, updateOrderStatus } = require("../conttoller/user-Controller");
 const router = express.Router()
 const {isAdmin,authMiddleware} = require("../middlewarer/authMiddlewarer");
 const upload = require("../middlewarer/upload");
@@ -12,11 +12,13 @@ router.post("/add-cart",authMiddleware,userCart)
 router.post("/add-order",authMiddleware,creactorder)
 router.get("/order/:id",authMiddleware,getSingalOrder)
 router.get("/user-order",authMiddleware,getallUserOrder)
+router.get("/dashborddata",authMiddleware,isAdmin,geDashbordData)
 router.get("/all-order",authMiddleware,getAllOrders)
 router.get("/get-cart",authMiddleware,getUserCart)
 router.get("/",authMiddleware,isAdmin, getallUser)
 router.get("/wishlist",authMiddleware,getWishList)
 router.delete("/:id",authMiddleware,isAdmin, deleteUser)
+router.put("/order-update/:id",authMiddleware,isAdmin, updateOrderStatus)
 router.put("/update",authMiddleware,upload.single("image"), updateUser)
 router.get("/one",authMiddleware, getOneUser)
 
