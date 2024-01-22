@@ -6,8 +6,8 @@ const router = express.Router();
 
 
 
-router.post("/",authMiddleware,upload.single("image"),createCategory)
-router.put("/:id",authMiddleware,upload.single("image"),updateCategory)
+router.post("/",authMiddleware,createCategory)
+router.put("/:id",authMiddleware,updateCategory)
 router.get("/:id",getCategory)
 router.get("/",getallCategory)
 router.delete("/delete/:id",authMiddleware,isAdmin,deleteCategory)

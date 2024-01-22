@@ -16,6 +16,10 @@ var prodcategorySchema = new mongoose.Schema(
     image: {
       type: String,
     },
+    published:{
+      type:Boolean,
+      default:true,
+    },
   },
   {
     timestamps: true,

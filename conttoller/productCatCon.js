@@ -3,11 +3,20 @@ const asyncHandler = require("express-async-handler");
 const fs = require('fs');
 
 
-const createCategory = asyncHandler(async (req, res) => {
-  req.body.image  = req.file.filename;
+const createCategory = asyncHandler(async (req, res,next) => {
   try {
+
+    const data =  req.body;
+
+    console.log(data)
+
+
     const newCategory = await Category.create(req.body);
-    res.json(newCategory);
+    res.status(201).json({
+      success:true,
+      message:"category create success",
+      category:newCategory
+    });
   } catch (error) {
     throw new Error(error);
   }
@@ -24,21 +33,6 @@ const updateCategory = asyncHandler(async (req, res) => {
     if(!categoty){
       res.status(404).json({message:"product not found"})
     }
-
-    if(req.file){
-      if(categoty.image){
-        const filePath = `uploads/${categoty.image}`;
-        fs.unlink(filePath, (err) => {
-          if (err) {
-            console.error(err);
-          }
-        })
-      }
-
-      req.body.image = req.file.filename
-
-    }
-
     const updatedCategory = await Category.findByIdAndUpdate(id, req.body, {
       new: true,
     });
@@ -53,16 +47,6 @@ const deleteCategory = asyncHandler(async (req, res,next) => {
   const { id } = req.params;
   console.log(id)
   try {
-
-    const categoty = await Category.findById(id)
-    if(categoty.image){
-      const filePath = `uploads/${categoty.image}`;
-      fs.unlink(filePath, (err) => {
-        if (err) {
-          console.error(err);
-        }
-      })
-    }
     const deletedCategory = await Category.findByIdAndDelete(id);
     res.json(deletedCategory);
   } catch (error) {

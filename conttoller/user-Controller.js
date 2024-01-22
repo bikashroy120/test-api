@@ -64,9 +64,13 @@ const loginUserctrl = asyncHandler(async(req,res,next)=>{
 
 const loginAdmin = asyncHandler(async (req, res) => {
     const { email, password } = req.body;
+
     // check if user exists or not
     const findAdmin = await User.findOne({ email });
     if (findAdmin.role !== "admin") throw new Error("Not Authorised");
+
+    console.log(password)
+
     if (findAdmin && (findAdmin.password === password)) {
       const refreshToken = generateRefreshToken(findAdmin?._id);
       const updateuser = await User.findByIdAndUpdate(
@@ -80,7 +84,9 @@ const loginAdmin = asyncHandler(async (req, res) => {
         httpOnly: true,
         maxAge: 72 * 60 * 60 * 1000,
       });
-      res.json({
+
+      
+      res.status(200).json({
         _id: findAdmin?._id,
         firstname: findAdmin?.fastname,
         lastname: findAdmin?.lastname,
