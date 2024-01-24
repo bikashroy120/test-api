@@ -142,11 +142,64 @@ const handleRefreshToken = asyncHandler(async (req, res) => {
 
 const getallUser = asyncHandler(async (req,res)=>{
     try {
-        const getUsers = await User.find();
 
-        const update = getUsers.filter((item)=>item.role !=="admin")
+      let filters = { ...req.query };
+      const excludesFields = [
+        "limit",
+        "page",
+        "sort",
+        "fields",
+        "search",
+        "searchKey",
+        "modelName",
+      ];
+  
+      excludesFields.forEach((field) => {
+        delete filters[field];
+      });
+  
+      let queryStr = JSON.stringify(filters);
+      queryStr = queryStr.replace(/\b|gte|lte|lt\b/g, (match) => `${match}`);
+      filters = JSON.parse(queryStr);
+  
+      if (req.query.search) {
+        const search = req.query.search || "";
+        // const regSearch = new RegExp('.*' + search + '.*','i')
+        filters = {
+          $or: [
+            { fastname: { $regex: new RegExp(search, "i") } },
+            { lastname: { $regex: new RegExp(search, "i") } },
+            { email: { $regex: new RegExp(search, "i") } },
+          ],
+        };
+      }
+      // common-----------------------------------
+      let queries = {};
+      // ------------pagination------------------
+      if (req.query.limit | req.query.page) {
+        const { page = 1, limit = 2 } = req.query;
+        const skip = (page - 1) * +limit;
+        queries.skip = skip;
+        queries.limit = +limit;
+      }
+  
+      const count = await User.find(filters).countDocuments()
+  
+      const users = await User
+        .find(filters)
+        .skip(queries.skip)
+        .limit(queries.limit)
+        .sort({ createdAt: -1 });
 
-        res.json(update)
+
+        const update = users.filter((item)=>item.role !=="admin")
+
+        res.status(200).json({
+          success:true,
+          message:"user get successfully",
+          item:count,
+          user:update
+        })
     } catch (error) {
         throw new Error(error)
     }
