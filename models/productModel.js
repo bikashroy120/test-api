@@ -27,14 +27,16 @@ var productSchema = new mongoose.Schema(
       required: true,
     },
     category: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: String,
       required: true,
-      ref:"PCategory"
     },
     brand: {
-      type: mongoose.Schema.Types.ObjectId,
+      type: String,
       required: true,
-      ref:"Brand"
+    },
+    sku: {
+      type: String,
+      required: true,
     },
     quantity: {
       type: Number,

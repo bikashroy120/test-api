@@ -19,7 +19,7 @@ router.get("/",authMiddleware,isAdmin, getallUser)
 router.get("/wishlist",authMiddleware,getWishList)
 router.delete("/:id",authMiddleware,isAdmin, deleteUser)
 router.put("/order-update/:id",authMiddleware,isAdmin, updateOrderStatus)
-router.put("/update",authMiddleware,upload.single("image"), updateUser)
+router.put("/update",authMiddleware, updateUser)
 router.get("/one",authMiddleware, getOneUser)
 
 

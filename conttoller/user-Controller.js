@@ -248,32 +248,19 @@ const updateUser = asyncHandler(async (req,res,next)=>{
 
       const userGet = await User.findById(_id)
 
-      if(req.file){
-        if(userGet.image){
-          const filePath = `uploads/${userGet.image}`;
-          fs.unlink(filePath, (err) => {
-            if (err) {
-              console.error(err);
-            }
-          })
-        }
-
-  
-      }
-
         const getUser = await User.findByIdAndUpdate(_id,{
             fastname:req.body.fastname,
             lastname:req.body.lastname,
             mobile:req.body.mobile,
             city:req.body.city,
-            image: req.file.filename
+            image: req.body.image,
         },
         {
             new:true
         })
         res.json({
         _id: getUser?._id,
-        firstname: getUser?.firstname,
+        fastname: getUser?.fastname,
         lastname: getUser?.lastname,
         email: getUser?.email,
         mobile: getUser?.mobile,

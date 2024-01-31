@@ -79,44 +79,99 @@ const   createProduct = asyncHandler(async (req, res) => {
   const getAllProduct = asyncHandler(async (req, res) => {
     try {
       // Filtering
-      const queryObj = { ...req.query };
-      const excludeFields = ["page", "sort", "limit", "fields"];
-      excludeFields.forEach((el) => delete queryObj[el]);
-      let queryStr = JSON.stringify(queryObj);
-      queryStr = queryStr.replace(/\b(gte|gt|lte|lt)\b/g, (match) => `$${match}`);
+      // const queryObj = { ...req.query };
+      // const excludeFields = ["page", "sort", "limit", "fields"];
+      // excludeFields.forEach((el) => delete queryObj[el]);
+      // let queryStr = JSON.stringify(queryObj);
+      // queryStr = queryStr.replace(/\b(gte|gt|lte|lt)\b/g, (match) => `$${match}`);
   
-      let query = Product.find(JSON.parse(queryStr));
+      // let query = Product.find(JSON.parse(queryStr));
   
       // Sorting
   
-      if (req.query.sort) {
-        const sortBy = req.query.sort.split(",").join(" ");
-        query = query.sort(sortBy);
-      } else {
-        query = query.sort("-createdAt");
-      }
+      // if (req.query.sort) {
+      //   const sortBy = req.query.sort.split(",").join(" ");
+      //   query = query.sort(sortBy);
+      // } else {
+      //   query = query.sort("-createdAt");
+      // }
   
       // limiting the fields
   
-      if (req.query.fields) {
-        const fields = req.query.fields.split(",").join(" ");
-        query = query.select(fields);
-      } else {
-        query = query.select("-__v");
-      }
+      // if (req.query.fields) {
+      //   const fields = req.query.fields.split(",").join(" ");
+      //   query = query.select(fields);
+      // } else {
+      //   query = query.select("-__v");
+      // }
   
       // pagination
   
-      const page = req.query.page;
-      const limit = req.query.limit;
-      const skip = (page - 1) * limit;
-      query = query.skip(skip).limit(limit);
-      if (req.query.page) {
-        const productCount = await Product.countDocuments();
-        if (skip >= productCount) throw new Error("This Page does not exists");
+      // const page = req.query.page;
+      // const limit = req.query.limit;
+      // const skip = (page - 1) * limit;
+      // query = query.skip(skip).limit(limit);
+      // if (req.query.page) {
+      //   const productCount = await Product.countDocuments();
+      //   if (skip >= productCount) throw new Error("This Page does not exists");
+      // }
+
+
+      let filters = { ...req.query };
+      const excludesFields = [
+        "limit",
+        "page",
+        "sort",
+        "fields",
+        "search",
+        "searchKey",
+        "modelName",
+      ];
+  
+      excludesFields.forEach((field) => {
+        delete filters[field];
+      });
+  
+      let queryStr = JSON.stringify(filters);
+      queryStr = queryStr.replace(/\b|gte|lte|lt\b/g, (match) => `${match}`);
+      filters = JSON.parse(queryStr);
+  
+      if (req.query.search) {
+        const search = req.query.search || "";
+        // const regSearch = new RegExp('.*' + search + '.*','i')
+        filters = {
+          $or: [
+            { title: { $regex: new RegExp(search, "i") } },
+            { category: { $regex: new RegExp(search, "i") } },
+            { brand: { $regex: new RegExp(search, "i") } },
+          ],
+        };
       }
-      const product = await query;
-      res.json(product);
+      // common-----------------------------------
+      let queries = {};
+      // ------------pagination------------------
+      if (req.query.limit | req.query.page) {
+        const { page = 1, limit = 2 } = req.query;
+        const skip = (page - 1) * +limit;
+        queries.skip = skip;
+        queries.limit = +limit;
+      }
+  
+      const count = await Product.find(filters).countDocuments()
+  
+      const products = await Product
+        .find(filters)
+        .skip(queries.skip)
+        .limit(queries.limit)
+        .sort({ createdAt: -1 });
+
+
+
+        res.status(200).json({
+          success:true,
+          item:count,
+          products
+        })
     } catch (error) {
       throw new Error(error);
     }

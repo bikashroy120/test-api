@@ -5,7 +5,6 @@ const asyncHandler = require("express-async-handler");
 const { cloudinaryUploadImg } = require("../utails/cloudinary");
 
 const creactBlog = asyncHandler(async(req,res,next)=>{
-    req.body.image  = req.file.filename;
     try {
       const newBlog = await Blog.create(req.body);
         res.json(newBlog)
@@ -48,10 +47,75 @@ const getBlog = asyncHandler(async(req,res,next)=>{
     }
 })
 
+const getBlogAdmin = asyncHandler(async(req,res,next)=>{
+  const {id} = req.params;
+
+  try {
+      const blog = await Blog.findById(id)
+      res.json(blog)
+  } catch (error) {
+      throw new Error(error)
+  }
+})
+
 const getAllBlog  = asyncHandler(async(req,res,next)=>{
     try {
-        const blog = await Blog.find();
-        res.json(blog)
+
+      let filters = { ...req.query };
+      const excludesFields = [
+        "limit",
+        "page",
+        "sort",
+        "fields",
+        "search",
+        "searchKey",
+        "modelName",
+      ];
+  
+      excludesFields.forEach((field) => {
+        delete filters[field];
+      });
+  
+      let queryStr = JSON.stringify(filters);
+      queryStr = queryStr.replace(/\b|gte|lte|lt\b/g, (match) => `${match}`);
+      filters = JSON.parse(queryStr);
+  
+      if (req.query.search) {
+        const search = req.query.search || "";
+        // const regSearch = new RegExp('.*' + search + '.*','i')
+        filters = {
+          $or: [
+            { title: { $regex: new RegExp(search, "i") } },
+            { category: { $regex: new RegExp(search, "i") } },
+          ],
+        };
+      }
+      // common-----------------------------------
+      let queries = {};
+      // ------------pagination------------------
+      if (req.query.limit | req.query.page) {
+        const { page = 1, limit = 2 } = req.query;
+        const skip = (page - 1) * +limit;
+        queries.skip = skip;
+        queries.limit = +limit;
+      }
+  
+      const count = await Blog.find(filters).countDocuments()
+  
+      const blog = await Blog
+        .find(filters)
+        .skip(queries.skip)
+        .limit(queries.limit)
+        .sort({ createdAt: -1 });
+
+
+
+        res.status(200).json({
+          success:true,
+          item:count,
+          blog
+        })
+
     } catch (error) {
         throw new Error(error)
     }
@@ -200,4 +264,4 @@ const liketheBlog = asyncHandler(async (req, res,next) => {
   });
 
 
-  module.exports = {uploadImages,disliketheBlog,liketheBlog,deleteBlog,getAllBlog,getBlog,updateBlog,creactBlog}
+  module.exports = {uploadImages,disliketheBlog,liketheBlog,deleteBlog,getAllBlog,getBlog,updateBlog,creactBlog,getBlogAdmin}
