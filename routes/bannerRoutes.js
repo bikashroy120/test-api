@@ -6,7 +6,7 @@ const { createBanner, getBanner } = require("../conttoller/bannerConttroller");
 
 
 
-router.post("/",authMiddleware,isAdmin,createBanner)
+router.post("/",createBanner)
 router.get("/all-banner",getBanner)
 router.delete("/delete-banner/:id",getBanner)
 

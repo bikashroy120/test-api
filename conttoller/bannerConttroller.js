@@ -1,11 +1,11 @@
-const Banner = require("../models/bannerModal");
+const Slyer = require("../models/slyderModal");
 const asyncHandler = require("express-async-handler");
 
 const createBanner = asyncHandler(async(req,res,next)=>{
     try {
         // const banner = await Banner.create(req.body)
 
-        const newBanner = new Banner({
+        const newBanner = new Slyer({
             image:req.body.image,
             category:req.body.category,
         })  
@@ -25,8 +25,8 @@ const createBanner = asyncHandler(async(req,res,next)=>{
 
 const getBanner = asyncHandler(async(req,res,next)=>{
     try {
-        const banner = await Banner.find()
-        res.status(201).json({
+        const banner = await Slyer.find()
+        res.status(200).json({
             success:true,
             message:"get banner success",
             banner
@@ -42,7 +42,7 @@ const deleteBanner = asyncHandler(async(req,res,next)=>{
 
         const {id} = req.params()
 
-        const banner = await Banner.findByIdAndDelete(id)
+        const banner = await Slyer.findByIdAndDelete(id)
 
         res.status(201).json({
             success:true,

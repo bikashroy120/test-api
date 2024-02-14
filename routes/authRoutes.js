@@ -1,5 +1,5 @@
 const express = require("express");
-const { creactUser, loginUserctrl, getallUser, getOneUser, deleteUser, updateUser, loginAdmin, getWishList, userCart, getUserCart, creactorder, getSingalOrder, getallUserOrder, getAllOrders, geDashbordData, updateOrderStatus } = require("../conttoller/user-Controller");
+const { creactUser, loginUserctrl, getallUser, getOneUser, deleteUser, updateUser, loginAdmin, getWishList, userCart, getUserCart, creactorder, getSingalOrder, getallUserOrder, getAllOrders, geDashbordData, updateOrderStatus, updatePassword } = require("../conttoller/user-Controller");
 const router = express.Router()
 const {isAdmin,authMiddleware} = require("../middlewarer/authMiddlewarer");
 const upload = require("../middlewarer/upload");
@@ -21,6 +21,7 @@ router.delete("/:id",authMiddleware,isAdmin, deleteUser)
 router.put("/order-update/:id",authMiddleware,isAdmin, updateOrderStatus)
 router.put("/update",authMiddleware, updateUser)
 router.get("/one",authMiddleware, getOneUser)
+router.put("/update-password",authMiddleware,updatePassword)
 
 
 module.exports=router;
