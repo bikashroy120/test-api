@@ -40,7 +40,7 @@ const getBanner = asyncHandler(async(req,res,next)=>{
 const deleteBanner = asyncHandler(async(req,res,next)=>{
     try {
 
-        const {id} = req.params()
+        const { id } = req.params;
 
         const banner = await Slyer.findByIdAndDelete(id)
 
