@@ -490,7 +490,7 @@ const getallUserOrder = asyncHandler(async (req, res) => {
 
 const geDashbordData = asyncHandler(async (req, res) => {
   try {
-    const order = await Order.find();
+    const order = await Order.find().sort({ createdAt: -1 });
     const paddingOrder = order.filter((item) => item.orderStatus === "Pending");
     const Processing = order.filter(
       (item) => item.orderStatus === "Processing"
