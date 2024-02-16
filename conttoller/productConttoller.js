@@ -6,15 +6,6 @@ const fs = require("fs");
 
 const createProduct = asyncHandler(async (req, res) => {
   try {
-    if (req.files) {
-      const newimage = [];
-      req.files.forEach((item) => {
-        newimage.push(item.filename);
-      });
-
-      req.body.images = newimage;
-    }
-
     if (req.body.title) {
       req.body.slug = slugify(req.body.title);
     }
