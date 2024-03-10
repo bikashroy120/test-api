@@ -17,6 +17,7 @@ const brandRoutes = require("./routes/brandRoutes");
 const blogCatRoutes = require("./routes/blogCatRoutes");
 const couponRoutes = require("./routes/couponRouters");
 const bannerRoutes = require("./routes/bannerRoutes")
+const cartRoutes = require("./routes/cartRoutes")
 const uploadImage = require("./routes/uploadRoute");
 const ErrorMiddleware = require("./middlewarer/error");
 dbConnect()
@@ -40,6 +41,7 @@ app.use("/api/brand",brandRoutes);
 app.use("/api/blog-category",blogCatRoutes)
 app.use("/api/coupon",couponRoutes)
 app.use("/api/banner",bannerRoutes)
+app.use("/api/cart",cartRoutes)
 app.use("/api/upload",uploadImage) 
 
 
