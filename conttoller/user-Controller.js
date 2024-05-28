@@ -170,6 +170,7 @@ const getallUser = asyncHandler(async (req, res) => {
           { fastname: { $regex: new RegExp(search, "i") } },
           { lastname: { $regex: new RegExp(search, "i") } },
           { email: { $regex: new RegExp(search, "i") } },
+          { phone: { $regex: new RegExp(search, "i") } },
         ],
       };
     }
