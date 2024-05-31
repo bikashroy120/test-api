@@ -22,13 +22,17 @@ var productSchema = new mongoose.Schema(
       type: Number,
       required: true,
     },
+    sellPrice: {
+      type: Number,
+      required: true,
+    },
     price: {
       type: Number,
       required: true,
     },
     category: {
-      type:mongoose.Schema.Types.ObjectId,
-      ref:"Category"
+      type: String,
+      required: true,
     },
     brand: {
       type: String,
@@ -49,9 +53,9 @@ var productSchema = new mongoose.Schema(
     images: [String],
     color: [
       {
-        type:mongoose.Schema.Types.ObjectId,
-        ref:"Color"
-      }
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "Color",
+      },
     ],
     tags: String,
     ratings: [
@@ -65,19 +69,25 @@ var productSchema = new mongoose.Schema(
       type: String,
       default: 0,
     },
+    status: {
+      type: Boolean,
+      required: [false, "Please select product publish or review."],
+      default: true,
+    },
   },
   { timestamps: true }
 );
 
-
-productSchema.pre(/^find/, function(next) {
+productSchema.pre(/^find/, function (next) {
   this.populate({
-    path: 'color',
-  }).populate({
-    path: 'brand',
-  }).populate({
-    path: 'category',
-  });
+    path: "color",
+  })
+    .populate({
+      path: "brand",
+    })
+    .populate({
+      path: "category",
+    });
 
   next();
 });

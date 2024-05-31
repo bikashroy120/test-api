@@ -12,6 +12,7 @@ var orderSchema = new mongoose.Schema(
         "Pending",
         "Processing",
         "Complete",
+        "Cancel",
       ],
     },
     orderby: {
