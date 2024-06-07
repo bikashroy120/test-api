@@ -1,14 +1,14 @@
-const  mongoose  = require("mongoose")
+const mongoose = require('mongoose');
 
-
-const dbConnect = ()=>{
-    try {
-        mongoose.set('strictQuery', true)
-        const conn = mongoose.connect(process.env.DB_UTL)
-        console.log("Database connect")
-    } catch (error) {
-        console.log("Database error") 
+const dbConnect = () => {
+    const uri ="mongodb+srv://bikash:bikash@cluster0.d6mqmni.mongodb.net"
+    if (!uri) {
+        throw new Error('MONGODB_URI environment variable is not defined');
     }
-}
+    return mongoose.connect(uri, {
+        useNewUrlParser: true,
+        useUnifiedTopology: true,
+    });
+};
 
 module.exports = dbConnect
