@@ -502,6 +502,26 @@ const creactorder = asyncHandler(async (req, res) => {
   const { _id } = req.user;
   try {
     req.body.orderby = _id;
+
+    const data = req.body;
+
+    // increase product sale count and decrease product stock quantity for each order item product
+    for (const items of data.products) {
+      const product = await Product.findById(items.item);
+      if (product) {
+        await Product.findByIdAndUpdate(
+          items.item,
+          {
+            $inc: {
+              sold: items.quantity * 1,
+              quantity: -items.quantity * 1,
+            },
+          },
+          { new: true }
+        );
+      }
+    }
+
     const order = await Order.create(req.body);
     res.json(order);
   } catch (error) {
@@ -544,6 +564,51 @@ const getallUserOrder = asyncHandler(async (req, res) => {
   }
 });
 
+const getallUserOrderAdmin = asyncHandler(async (req, res) => {
+  const id = req.params.id;
+
+  try {
+    let filters = { ...req.query };
+    const excludesFields = [
+      "limit",
+      "page",
+      "sort",
+      "fields",
+      "search",
+      "searchKey",
+      "modelName",
+    ];
+
+    excludesFields.forEach((field) => {
+      delete filters[field];
+    });
+
+    let queries = {};
+
+    // ------------pagination------------------
+    if (req.query.limit | req.query.page) {
+      const { page = 1, limit = 2 } = req.query;
+      const skip = (page - 1) * +limit;
+      queries.skip = skip;
+      queries.limit = +limit;
+    }
+
+    const order = await Order.find({ orderby: id })
+      .skip(queries.skip)
+      .limit(queries.limit);
+
+    const count = await Order.find({ orderby: id }).countDocuments();
+
+    res.json({
+      status: "success",
+      item: count,
+      order: order,
+    });
+  } catch (error) {
+    throw new Error(error);
+  }
+});
+
 const geDashbordData = asyncHandler(async (req, res) => {
   try {
     const order = await Order.find().sort({ createdAt: -1 });
@@ -563,6 +628,127 @@ const geDashbordData = asyncHandler(async (req, res) => {
     throw new Error(error);
   }
 });
+
+const getDashboardAdminData = asyncHandler(async (req, res, next) => {
+  try {
+    let startDate = req.query.startDate;
+    let endDate = req.query.endDate;
+    let query = {};
+
+    if (startDate && endDate) {
+      query = {
+        createdAt: {
+          $gte: new Date(startDate),
+          $lte: new Date(endDate),
+        },
+      };
+    }
+
+    const totalOrderAmount = await Order.aggregate([
+      { $match: query },
+      {
+        $group: {
+          _id: null,
+          totalAmount: { $sum: "$totle" },
+          totalShippingPrice: { $sum: "$shippingCost" },
+          totalOrders: { $sum: 1 },
+          pendingOrders: {
+            $sum: { $cond: [{ $eq: ["$orderStatus", "Pending"] }, 1, 0] },
+          },
+          processingOrders: {
+            $sum: { $cond: [{ $eq: ["$orderStatus", "Processing"] }, 1, 0] },
+          },
+          deliveredOrders: {
+            $sum: { $cond: [{ $eq: ["$orderStatus", "Complete"] }, 1, 0] },
+          },
+          cancelledOrders: {
+            $sum: { $cond: [{ $eq: ["$orderStatus", "Cancel"] }, 1, 0] },
+          },
+          pendingOrdersTotalAmount: {
+            $sum: {
+              $cond: [{ $eq: ["$orderStatus", "Pending"] }, "$totle", 0],
+            },
+          },
+          processingOrdersTotalAmount: {
+            $sum: {
+              $cond: [{ $eq: ["$orderStatus", "Processing"] }, "$totle", 0],
+            },
+          },
+          deliveredOrdersTotalAmount: {
+            $sum: {
+              $cond: [{ $eq: ["$orderStatus", "Complete"] }, "$totle", 0],
+            },
+          },
+          cancelledOrdersTotalAmount: {
+            $sum: {
+              $cond: [{ $eq: ["$orderStatus", "Cancel"] }, "$totle", 0],
+            },
+          },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+        },
+      },
+    ]);
+
+    res.status(200).json({
+      status: "success",
+      data: {
+        totalOrderAmount: totalOrderAmount[0] || {
+          totalAmount: 0,
+          totalShippingPrice: 0,
+          totalOrders: 0,
+          pendingOrders: 0,
+          processingOrders: 0,
+          deliveredOrders: 0,
+          cancelledOrders: 0,
+          pendingOrdersTotalAmount: 0,
+          processingOrdersTotalAmount: 0,
+          deliveredOrdersTotalAmount: 0,
+          cancelledOrdersTotalAmount: 0,
+        },
+      },
+    });
+  } catch (error) {
+    throw new Error(error);
+  }
+});
+
+const getTodayOrders = async (req, res) => {
+  try {
+    const today = new Date().setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const todayOrders = await Order.find({
+      createdAt: {
+        $gte: today,
+        $lt: tomorrow,
+      },
+    });
+
+    let totalTodayOrderAmount = 0;
+    todayOrders.forEach((order) => {
+      totalTodayOrderAmount += order.totle;
+    });
+
+    res.status(200).json({
+      status: "success",
+      data: {
+        todayOrderItems: todayOrders.length,
+        totalTodayOrderAmount,
+      },
+    });
+  } catch (error) {
+    res.status(400).json({
+      status: "fail",
+      message: "Can't get the data",
+      error: error.message,
+    });
+  }
+};
 
 // const createOrder = asyncHandler(async (req, res) => {
 //   const { COD, couponApplied } = req.body;
@@ -615,6 +801,20 @@ const getOrders = asyncHandler(async (req, res) => {
       .populate("orderby")
       .exec();
     res.json(userorders);
+  } catch (error) {
+    throw new Error(error);
+  }
+});
+
+const getAllOrdersAmin = asyncHandler(async (req, res) => {
+  try {
+    const order = await Order.find();
+
+    res.status(200).json({
+      success: true,
+      message: "order get successfully",
+      order: order,
+    });
   } catch (error) {
     throw new Error(error);
   }
@@ -771,4 +971,8 @@ module.exports = {
   updatePassword,
   getUserById,
   updateUserAdmin,
+  getallUserOrderAdmin,
+  getDashboardAdminData,
+  getTodayOrders,
+  getAllOrdersAmin,
 };

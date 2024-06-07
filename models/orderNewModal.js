@@ -46,6 +46,9 @@ var orderSchema = new mongoose.Schema(
     shipping: {
         type:String
     },
+    shippingCost: {
+      type:Number
+  },
     method: {
         type:String
     },

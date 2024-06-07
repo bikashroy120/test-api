@@ -80,9 +80,9 @@ const getAllProduct = asyncHandler(async (req, res) => {
       delete filters[field];
     });
 
-    let queryStr = JSON.stringify(filters);
-    queryStr = queryStr.replace(/\b|gte|lte|lt\b/g, (match) => `${match}`);
-    filters = JSON.parse(queryStr);
+    // let queryStr = JSON.stringify(filters);
+    // queryStr = queryStr.replace(/\b|gte|lte|lt\b/g, (match) => `${match}`);
+    // filters = JSON.parse(queryStr);
 
     if (req.query.search) {
       const search = req.query.search || "";
@@ -95,6 +95,18 @@ const getAllProduct = asyncHandler(async (req, res) => {
         ],
       };
     }
+
+        // -----------query oparators----------------
+        let filterString = JSON.stringify(filters);
+
+        filterString = filterString.replace(
+          /\b(gt|lt|gte|lte)\b/g,
+          (match) => `$${match}`
+        );
+    
+        filters = JSON.parse(filterString);
+
+
     // common-----------------------------------
     let queries = {};
     // ------------pagination------------------
