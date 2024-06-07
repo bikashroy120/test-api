@@ -12,6 +12,7 @@ var orderSchema = new mongoose.Schema(
         "Pending",
         "Processing",
         "Complete",
+        "Cancel",
       ],
     },
     orderby: {
@@ -45,6 +46,9 @@ var orderSchema = new mongoose.Schema(
     shipping: {
         type:String
     },
+    shippingCost: {
+      type:Number
+  },
     method: {
         type:String
     },

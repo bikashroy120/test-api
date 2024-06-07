@@ -170,6 +170,7 @@ const getallUser = asyncHandler(async (req, res) => {
           { fastname: { $regex: new RegExp(search, "i") } },
           { lastname: { $regex: new RegExp(search, "i") } },
           { email: { $regex: new RegExp(search, "i") } },
+          { mobile: { $regex: new RegExp(search, "i") } },
         ],
       };
     }
@@ -220,7 +221,22 @@ const getOneUser = asyncHandler(async (req, res, next) => {
   try {
     const getUser = await User.findById(_id);
     res.json({
-      user:getUser
+      user: getUser,
+    });
+  } catch (error) {
+    throw new Error(error);
+  }
+});
+
+const getUserById = asyncHandler(async (req, res, next) => {
+  const id = req.params.id;
+
+  try {
+    const getUser = await User.findById(id);
+    res.status(200).json({
+      user: getUser,
+      status: "success",
+      message: "user get success",
     });
   } catch (error) {
     throw new Error(error);
@@ -240,36 +256,34 @@ const deleteUser = asyncHandler(async (req, res, next) => {
   }
 });
 
-
-const updatePassword = asyncHandler(async(req,res,next)=>{
+const updatePassword = asyncHandler(async (req, res, next) => {
   try {
-      const {email,oldPassword,newPassword} = req.body;
-      const user = await User.findOne({email:email})
+    const { email, oldPassword, newPassword } = req.body;
+    const user = await User.findOne({ email: email });
 
-      if(!user){
-        res.status(400).json({
-          message:"invalid email and old password"
-        })
-      }
+    if (!user) {
+      res.status(400).json({
+        message: "invalid email and old password",
+      });
+    }
 
-      if(user.password !==oldPassword){
-        res.status(400).json({
-          message:"invalid email and old password"
-        })
-      }else{
-        user.password = newPassword;
+    if (user.password !== oldPassword) {
+      res.status(400).json({
+        message: "invalid email and old password",
+      });
+    } else {
+      user.password = newPassword;
 
-        await user.save()
+      await user.save();
 
-        res.status(200).json({
-          message:"password change success"
-        })
-      }
-
+      res.status(200).json({
+        message: "password change success",
+      });
+    }
   } catch (error) {
     throw new Error(error);
   }
-})
+});
 
 const updateUser = asyncHandler(async (req, res, next) => {
   const { _id } = req.user;
@@ -291,7 +305,7 @@ const updateUser = asyncHandler(async (req, res, next) => {
       }
     );
     res.json({
-      user:{
+      user: {
         _id: getUser?._id,
         fastname: getUser?.fastname,
         lastname: getUser?.lastname,
@@ -301,6 +315,48 @@ const updateUser = asyncHandler(async (req, res, next) => {
         city: getUser?.city,
       },
       token: generateToken(getUser?._id),
+    });
+  } catch (error) {
+    throw new Error(error);
+  }
+});
+
+const updateUserAdmin = asyncHandler(async (req, res, next) => {
+  const id = req.params.id;
+
+  try {
+    const userGet = await User.findById(id);
+
+    if (!userGet) {
+      res.status(400).json({
+        status: "success",
+        message: "User not found",
+      });
+    }
+
+    const getUser = await User.findByIdAndUpdate(
+      id,
+      {
+        fastname: req.body.fastname,
+        lastname: req.body.lastname,
+        mobile: req.body.mobile,
+        city: req.body.city,
+        image: req.body.image,
+      },
+      {
+        new: true,
+      }
+    );
+    res.json({
+      user: {
+        _id: getUser?._id,
+        fastname: getUser?.fastname,
+        lastname: getUser?.lastname,
+        email: getUser?.email,
+        mobile: getUser?.mobile,
+        image: getUser?.image,
+        city: getUser?.city,
+      },
     });
   } catch (error) {
     throw new Error(error);
@@ -446,6 +502,26 @@ const creactorder = asyncHandler(async (req, res) => {
   const { _id } = req.user;
   try {
     req.body.orderby = _id;
+
+    const data = req.body;
+
+    // increase product sale count and decrease product stock quantity for each order item product
+    for (const items of data.products) {
+      const product = await Product.findById(items.item);
+      if (product) {
+        await Product.findByIdAndUpdate(
+          items.item,
+          {
+            $inc: {
+              sold: items.quantity * 1,
+              quantity: -items.quantity * 1,
+            },
+          },
+          { new: true }
+        );
+      }
+    }
+
     const order = await Order.create(req.body);
     res.json(order);
   } catch (error) {
@@ -488,6 +564,51 @@ const getallUserOrder = asyncHandler(async (req, res) => {
   }
 });
 
+const getallUserOrderAdmin = asyncHandler(async (req, res) => {
+  const id = req.params.id;
+
+  try {
+    let filters = { ...req.query };
+    const excludesFields = [
+      "limit",
+      "page",
+      "sort",
+      "fields",
+      "search",
+      "searchKey",
+      "modelName",
+    ];
+
+    excludesFields.forEach((field) => {
+      delete filters[field];
+    });
+
+    let queries = {};
+
+    // ------------pagination------------------
+    if (req.query.limit | req.query.page) {
+      const { page = 1, limit = 2 } = req.query;
+      const skip = (page - 1) * +limit;
+      queries.skip = skip;
+      queries.limit = +limit;
+    }
+
+    const order = await Order.find({ orderby: id })
+      .skip(queries.skip)
+      .limit(queries.limit);
+
+    const count = await Order.find({ orderby: id }).countDocuments();
+
+    res.json({
+      status: "success",
+      item: count,
+      order: order,
+    });
+  } catch (error) {
+    throw new Error(error);
+  }
+});
+
 const geDashbordData = asyncHandler(async (req, res) => {
   try {
     const order = await Order.find().sort({ createdAt: -1 });
@@ -507,6 +628,127 @@ const geDashbordData = asyncHandler(async (req, res) => {
     throw new Error(error);
   }
 });
+
+const getDashboardAdminData = asyncHandler(async (req, res, next) => {
+  try {
+    let startDate = req.query.startDate;
+    let endDate = req.query.endDate;
+    let query = {};
+
+    if (startDate && endDate) {
+      query = {
+        createdAt: {
+          $gte: new Date(startDate),
+          $lte: new Date(endDate),
+        },
+      };
+    }
+
+    const totalOrderAmount = await Order.aggregate([
+      { $match: query },
+      {
+        $group: {
+          _id: null,
+          totalAmount: { $sum: "$totle" },
+          totalShippingPrice: { $sum: "$shippingCost" },
+          totalOrders: { $sum: 1 },
+          pendingOrders: {
+            $sum: { $cond: [{ $eq: ["$orderStatus", "Pending"] }, 1, 0] },
+          },
+          processingOrders: {
+            $sum: { $cond: [{ $eq: ["$orderStatus", "Processing"] }, 1, 0] },
+          },
+          deliveredOrders: {
+            $sum: { $cond: [{ $eq: ["$orderStatus", "Complete"] }, 1, 0] },
+          },
+          cancelledOrders: {
+            $sum: { $cond: [{ $eq: ["$orderStatus", "Cancel"] }, 1, 0] },
+          },
+          pendingOrdersTotalAmount: {
+            $sum: {
+              $cond: [{ $eq: ["$orderStatus", "Pending"] }, "$totle", 0],
+            },
+          },
+          processingOrdersTotalAmount: {
+            $sum: {
+              $cond: [{ $eq: ["$orderStatus", "Processing"] }, "$totle", 0],
+            },
+          },
+          deliveredOrdersTotalAmount: {
+            $sum: {
+              $cond: [{ $eq: ["$orderStatus", "Complete"] }, "$totle", 0],
+            },
+          },
+          cancelledOrdersTotalAmount: {
+            $sum: {
+              $cond: [{ $eq: ["$orderStatus", "Cancel"] }, "$totle", 0],
+            },
+          },
+        },
+      },
+      {
+        $project: {
+          _id: 0,
+        },
+      },
+    ]);
+
+    res.status(200).json({
+      status: "success",
+      data: {
+        totalOrderAmount: totalOrderAmount[0] || {
+          totalAmount: 0,
+          totalShippingPrice: 0,
+          totalOrders: 0,
+          pendingOrders: 0,
+          processingOrders: 0,
+          deliveredOrders: 0,
+          cancelledOrders: 0,
+          pendingOrdersTotalAmount: 0,
+          processingOrdersTotalAmount: 0,
+          deliveredOrdersTotalAmount: 0,
+          cancelledOrdersTotalAmount: 0,
+        },
+      },
+    });
+  } catch (error) {
+    throw new Error(error);
+  }
+});
+
+const getTodayOrders = async (req, res) => {
+  try {
+    const today = new Date().setHours(0, 0, 0, 0);
+    const tomorrow = new Date(today);
+    tomorrow.setDate(tomorrow.getDate() + 1);
+
+    const todayOrders = await Order.find({
+      createdAt: {
+        $gte: today,
+        $lt: tomorrow,
+      },
+    });
+
+    let totalTodayOrderAmount = 0;
+    todayOrders.forEach((order) => {
+      totalTodayOrderAmount += order.totle;
+    });
+
+    res.status(200).json({
+      status: "success",
+      data: {
+        todayOrderItems: todayOrders.length,
+        totalTodayOrderAmount,
+      },
+    });
+  } catch (error) {
+    res.status(400).json({
+      status: "fail",
+      message: "Can't get the data",
+      error: error.message,
+    });
+  }
+};
 
 // const createOrder = asyncHandler(async (req, res) => {
 //   const { COD, couponApplied } = req.body;
@@ -564,6 +806,20 @@ const getOrders = asyncHandler(async (req, res) => {
   }
 });
 
+const getAllOrdersAmin = asyncHandler(async (req, res) => {
+  try {
+    const order = await Order.find();
+
+    res.status(200).json({
+      success: true,
+      message: "order get successfully",
+      order: order,
+    });
+  } catch (error) {
+    throw new Error(error);
+  }
+});
+
 const getAllOrders = asyncHandler(async (req, res) => {
   try {
     let filters = { ...req.query };
@@ -607,12 +863,48 @@ const getAllOrders = asyncHandler(async (req, res) => {
       queries.limit = +limit;
     }
 
+    // Date range filtering
+    if (req.query.dateRange) {
+      const today = new Date();
+      let dateRangeFilter = {};
+      switch (req.query.dateRange) {
+        case "last30days":
+          dateRangeFilter = {
+            $gte: new Date(today.setDate(today.getDate() - 30)),
+          };
+          break;
+        case "last15days":
+          dateRangeFilter = {
+            $gte: new Date(today.setDate(today.getDate() - 15)),
+          };
+          break;
+        case "last7days":
+          dateRangeFilter = {
+            $gte: new Date(today.setDate(today.getDate() - 7)),
+          };
+          break;
+        default:
+          break;
+      }
+      filters.createdAt = dateRangeFilter;
+    }
+
+    // single with multi sorting
+    if (req.query.sort) {
+      let sortCateory = req.query.sort;
+      sortCateory = sortCateory.split(",").join(" ");
+      console.log("========", sortCateory);
+      queries.sort = sortCateory;
+    } else {
+      queries.sort = "-createdAt";
+    }
+
     const count = await Order.find(filters).countDocuments();
 
     const order = await Order.find(filters)
       .skip(queries.skip)
       .limit(queries.limit)
-      .sort({ createdAt: -1 });
+      .sort(queries.sort);
 
     res.status(200).json({
       success: true,
@@ -620,7 +912,6 @@ const getAllOrders = asyncHandler(async (req, res) => {
       item: count,
       order: order,
     });
-
   } catch (error) {
     throw new Error(error);
   }
@@ -678,4 +969,10 @@ module.exports = {
   deleteUser,
   updateUser,
   updatePassword,
+  getUserById,
+  updateUserAdmin,
+  getallUserOrderAdmin,
+  getDashboardAdminData,
+  getTodayOrders,
+  getAllOrdersAmin,
 };
